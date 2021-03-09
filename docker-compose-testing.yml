@@ -1,0 +1,17 @@
+version: '3'
+services:
+  til-app:
+    depends_on:
+      - postgres
+    build:
+      context: .
+      dockerfile: testing.Dockerfile
+    environment:
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5433
+  postgres:
+    image: "postgres"
+    environment:
+      - POSTGRES_DB=til_test_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=

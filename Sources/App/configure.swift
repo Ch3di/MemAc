@@ -2,22 +2,29 @@ import Fluent
 import FluentPostgresDriver
 import Vapor
 
+
+
 // configures your application
 public func configure(_ app: Application) throws {
     // uncomment to serve files from /Public folder
     // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
 
     let databaseName: String
-    let databasePort: Int = 5432
+    var databasePort: Int = 5432
     if (app.environment == .testing) {
         databaseName = "til_test_db"
+        if let testPort = Environment.get("DATABASE_PORT") {
+            databasePort = Int(testPort) ?? 5433
+        } else {
+            databasePort = 5433
+        }
     } else {
         databaseName = "til_db"
     }
-
+//    Environment.get("DATABASE_PORT").flatMap(Int.init(_:))
     app.databases.use(.postgres(
         hostname: Environment.get("DATABASE_HOST") ?? "localhost",
-        port: Environment.get("DATABASE_PORT").flatMap(Int.init(_:)) ?? databasePort,
+        port: databasePort,
         username: Environment.get("DATABASE_USERNAME") ?? "postgres",
         password: Environment.get("DATABASE_PASSWORD") ?? "",
         database: Environment.get("DATABASE_NAME") ?? databaseName
@@ -33,4 +40,5 @@ public func configure(_ app: Application) throws {
 
     // register routes
     try routes(app)
+
 }
