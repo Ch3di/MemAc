@@ -7,6 +7,10 @@ struct CreateUser: Migration {
                 .id()
                 .field("name", .string, .required)
                 .field("username", .string, .required)
+                .unique(on: "username")
+                .field("password_hash", .string, .required)
+                .field("created_at", .datetime, .required)
+                .field("updated_at", .datetime, .required)
                 .create()
     }
 
