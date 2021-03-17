@@ -9,7 +9,6 @@ final class User: Model, Content {
         let id: UUID
         let username: String
         let name: String
-        let acronyms: [Acronym]
     }
 
     static let schema = "users"
@@ -49,8 +48,7 @@ final class User: Model, Content {
         Public(
                 id: try requireID(),
                 username: username,
-                name: name,
-                acronyms: acronyms
+                name: name
         )
     }
 }

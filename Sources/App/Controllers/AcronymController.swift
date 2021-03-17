@@ -1,5 +1,12 @@
 import Vapor
 import Fluent
+
+struct CreateAcronymData: Content {
+    let short: String
+    let long: String
+}
+
+
 struct AcronymsController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let acronymsRoutes = routes.grouped("api", "acronyms").grouped(JWTAuthenticatorBearer())
@@ -17,21 +24,28 @@ struct AcronymsController: RouteCollection {
         acronymsRoutes.delete(":acronymID", "categories", ":categoryID", use: removeCategoriesHandler)
     }
 
-    func getAllHandler(_ req: Request) throws -> EventLoopFuture<[Acronym]> {
+    func getAllHandler(_ req: Request) throws -> EventLoopFuture<[Acronym.Public]> {
         let user = try req.auth.require(User.self)
         return Acronym.query(on: req.db)
                 .filter(\.$user.$id == user.id!)
                 .all()
+                .flatMapThrowing { acronyms in
+                    var acronymsAsPublic: [Acronym.Public] = []
+                    for acronym in acronyms {
+                        acronymsAsPublic.append(try acronym.asPublic())
+                    }
+                    return acronymsAsPublic
+                }
     }
 
-    func createHandler(_ req: Request) throws -> EventLoopFuture<Acronym> {
+    func createHandler(_ req: Request) throws -> EventLoopFuture<Acronym.Public> {
         let data = try req.content.decode(CreateAcronymData.self)
         let user = try req.auth.require(User.self)
         let acronym = try Acronym(short: data.short, long: data.long, userID: user.requireID())
-        return acronym.save(on: req.db).map { acronym }
+        return acronym.save(on: req.db).flatMapThrowing { try acronym.asPublic() }
     }
 
-    func getHandler(_ req: Request) throws -> EventLoopFuture<Acronym> {
+    func getHandler(_ req: Request) throws -> EventLoopFuture<Acronym.Public> {
         guard let acronymID: UUID = req.parameters.get("acronymID", as: UUID.self) else {
             throw Abort(.badRequest)
         }
@@ -41,9 +55,10 @@ struct AcronymsController: RouteCollection {
                 .filter(\.$user.$id == user.id!)
                 .first()
                 .unwrap(or: Abort(.notFound))
+                .flatMapThrowing { acronym in try acronym.asPublic() }
     }
 
-    func updateHandler(_ req: Request) throws -> EventLoopFuture<Acronym> {
+    func updateHandler(_ req: Request) throws -> EventLoopFuture<Acronym.Public> {
         guard let acronymID: UUID = req.parameters.get("acronymID", as: UUID.self) else {
             throw Abort(.badRequest)
         }
@@ -57,8 +72,8 @@ struct AcronymsController: RouteCollection {
                 .flatMap { acronym in
                     acronym.short = updateData.short
                     acronym.long = updateData.long
-                    return acronym.save(on: req.db).map {
-                        acronym
+                    return acronym.save(on: req.db).flatMapThrowing {
+                        try acronym.asPublic()
                     }
                 }
     }
@@ -79,7 +94,7 @@ struct AcronymsController: RouteCollection {
                 }
     }
 
-    func searchHandler(_ req: Request) throws -> EventLoopFuture<[Acronym]> {
+    func searchHandler(_ req: Request) throws -> EventLoopFuture<[Acronym.Public]> {
         guard let searchTerm = req.query[String.self, at: "term"] else {
             throw Abort(.badRequest)
         }
@@ -90,29 +105,52 @@ struct AcronymsController: RouteCollection {
                     or.filter(\.$short ~~ searchTerm)
                     or.filter(\.$long ~~ searchTerm)
                 }.all()
+                 .flatMapThrowing { acronyms in
+                    var acronymsAsPublic: [Acronym.Public] = []
+                    for acronym in acronyms {
+                        acronymsAsPublic.append(try acronym.asPublic())
+                    }
+                    return acronymsAsPublic
+                 }
+
     }
 
-    func getFirstHandler(_ req: Request) throws -> EventLoopFuture<Acronym> {
+    func getFirstHandler(_ req: Request) throws -> EventLoopFuture<Acronym.Public> {
         let user = try req.auth.require(User.self)
         return Acronym.query(on: req.db)
                 .filter(\.$user.$id == user.id!)
                 .first()
                 .unwrap(or: Abort(.notFound))
+                .flatMapThrowing { acronym in
+                    try acronym.asPublic()
+                }
     }
 
-    func sortedHandler(_ req: Request) throws -> EventLoopFuture<[Acronym]> {
+    func sortedHandler(_ req: Request) throws -> EventLoopFuture<[Acronym.Public]> {
         let user = try req.auth.require(User.self)
         return Acronym.query(on: req.db)
                 .filter(\.$user.$id == user.id!)
                 .sort(\.$short, .ascending)
                 .all()
+                .flatMapThrowing { acronyms in
+                    var acronymsAsPublic: [Acronym.Public] = []
+                    for acronym in acronyms {
+                        acronymsAsPublic.append(try acronym.asPublic())
+                    }
+                    return acronymsAsPublic
+                }
     }
 
-    func getUserHandler(_ req: Request) throws -> EventLoopFuture<User> {
-        Acronym.find(req.parameters.get("acronymID"), on: req.db)
+    func getUserHandler(_ req: Request) throws -> EventLoopFuture<User.Public> {
+        guard let acronymID: UUID = req.parameters.get("acronymID", as: UUID.self) else {
+            throw Abort(.badRequest)
+        }
+        return Acronym.find(acronymID, on: req.db)
                 .unwrap(or: Abort(.notFound))
-                .flatMap { acronym in
-                    acronym.$user.get(on: req.db)
+                .flatMap{ acronym in
+                     acronym.$user.get(on: req.db).flatMapThrowing { user in
+                          try user.asPublic()
+                     }
                 }
     }
 
@@ -132,7 +170,10 @@ struct AcronymsController: RouteCollection {
     }
 
     func getCategoriesHandler(_ req: Request) throws -> EventLoopFuture<[Category]> {
-        Acronym.find(req.parameters.get("acronymID"), on: req.db)
+        guard let acronymID: UUID = req.parameters.get("acronymID", as: UUID.self) else {
+            throw Abort(.badRequest)
+        }
+        return Acronym.find(acronymID, on: req.db)
                 .unwrap(or: Abort(.notFound))
                 .flatMap { acronym in
                     acronym.$categories.query(on: req.db).all()
@@ -153,10 +194,4 @@ struct AcronymsController: RouteCollection {
                             .transform(to: .noContent)
                 }
     }
-
-}
-
-struct CreateAcronymData: Content {
-    let short: String
-    let long: String
 }

@@ -2,6 +2,13 @@ import Vapor
 import Fluent
 
 final class Acronym: Model {
+    struct Public: Content {
+        let id: UUID
+        let short: String
+        let long: String
+        let userID: UUID?
+    }
+
     static let schema = "acronyms"
 
     @ID
@@ -29,6 +36,15 @@ final class Acronym: Model {
         self.short = short
         self.long = long
         self.$user.id = userID
+    }
+
+    func asPublic() throws -> Public {
+        Public(
+                id: try requireID(),
+                short: short,
+                long: long,
+                userID: self.$user.id
+        )
     }
 }
 

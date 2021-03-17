@@ -43,11 +43,9 @@ struct UsersController: RouteCollection {
             return user.save(on: req.db)
         }.flatMap { user.$acronyms.load(on: req.db) }
          .flatMapThrowing {
-            // 1
             guard let newToken = try? user.generateToken(req.application) else {
                 throw Abort(.internalServerError)
             }
-            // 2
             token = newToken
             return NewSession(token: token, user: try user.asPublic())
         }
@@ -70,16 +68,30 @@ struct UsersController: RouteCollection {
         }
     }
 
-    func getHandler(_ req: Request) throws -> EventLoopFuture<User> {
-        User.find(req.parameters.get("userID"), on: req.db)
-                .unwrap(or: Abort(.notFound))
+    func getHandler(_ req: Request) throws -> EventLoopFuture<User.Public> {
+        guard let userID: UUID = req.parameters.get("userID", as: UUID.self) else {
+            throw Abort(.badRequest)
+        }
+        return User.find(userID, on: req.db)
+                .unwrap(or: Abort(.notFound)).flatMapThrowing { user in
+                    try user.asPublic()
+                }
     }
 
-    func getAcronymsHandler(_ req: Request) throws -> EventLoopFuture<[Acronym]> {
-        User.find(req.parameters.get("userID"), on: req.db)
+    func getAcronymsHandler(_ req: Request) throws -> EventLoopFuture<[Acronym.Public]> {
+        guard let userID: UUID = req.parameters.get("userID", as: UUID.self) else {
+            throw Abort(.badRequest)
+        }
+        return User.find(userID, on: req.db)
                 .unwrap(or: Abort(.notFound))
                 .flatMap { user in
-                    user.$acronyms.get(on: req.db)
+                    user.$acronyms.get(on: req.db).flatMapThrowing { acronyms in
+                        var acronymsAsPublic: [Acronym.Public] = []
+                        for acronym in acronyms {
+                            acronymsAsPublic.append(try acronym.asPublic())
+                        }
+                        return acronymsAsPublic
+                    }
                 }
     }
 
