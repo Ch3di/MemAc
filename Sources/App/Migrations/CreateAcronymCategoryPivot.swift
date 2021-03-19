@@ -8,6 +8,7 @@ struct CreateAcronymCategoryPivot: Migration {
                         .references("acronyms", "id", onDelete: .cascade))
                 .field("categoryID", .uuid, .required,
                         .references("categories", "id", onDelete: .cascade))
+                .unique(on: "acronymID", "categoryID")
                 .create()
     }
     func revert(on database: Database) -> EventLoopFuture<Void> {

@@ -6,6 +6,7 @@ final class Acronym: Model {
         let id: UUID
         let short: String
         let long: String
+        let isPrivate: Bool
         let userID: UUID?
     }
 
@@ -20,6 +21,9 @@ final class Acronym: Model {
     @Field(key: "long")
     var long: String
 
+    @Field(key: "private")
+    var isPrivate: Bool
+
     @Parent(key: "userID")
     var user: User
 
@@ -31,10 +35,11 @@ final class Acronym: Model {
 
     init() {}
 
-    init(id: UUID? = nil, short: String, long: String, userID: User.IDValue) {
+    init(id: UUID? = nil, short: String, long: String, isPrivate: Bool, userID: User.IDValue) {
         self.id = id
         self.short = short
         self.long = long
+        self.isPrivate = isPrivate
         self.$user.id = userID
     }
 
@@ -43,6 +48,7 @@ final class Acronym: Model {
                 id: try requireID(),
                 short: short,
                 long: long,
+                isPrivate: isPrivate,
                 userID: self.$user.id
         )
     }

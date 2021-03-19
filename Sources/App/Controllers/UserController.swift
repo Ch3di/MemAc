@@ -8,6 +8,7 @@ struct NewSession: Content {
     let user: User.Public
 }
 
+// missing get user categories
 struct UsersController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let usersRoute = routes.grouped("api", "users")
@@ -22,6 +23,13 @@ struct UsersController: RouteCollection {
                 .group("me") { user in
                     user.get(use: me)
                 }
+    }
+
+    private func checkIfUserExists(_ username: String, req: Request) -> EventLoopFuture<Bool> {
+        User.query(on: req.db)
+                .filter(\.$username == username)
+                .first()
+                .map { $0 != nil }
     }
 
     func createHandler(_ req: Request) throws -> EventLoopFuture<NewSession> {
@@ -51,21 +59,16 @@ struct UsersController: RouteCollection {
         }
     }
 
-    private func checkIfUserExists(_ username: String, req: Request) -> EventLoopFuture<Bool> {
-        User.query(on: req.db)
-                .filter(\.$username == username)
-                .first()
-                .map { $0 != nil }
-    }
-
     func getAllHandler(_ req: Request) throws -> EventLoopFuture<[User.Public]> {
-        User.query(on: req.db).with(\.$acronyms).all().flatMapThrowing { users -> [User.Public] in
-            var usersAsPublic: [User.Public] = []
-            for user in users {
-                usersAsPublic.append(try user.asPublic())
-            }
-            return usersAsPublic
-        }
+        User.query(on: req.db)
+                .all()
+                .flatMapThrowing { users -> [User.Public] in
+                    var usersAsPublic: [User.Public] = []
+                    for user in users {
+                        usersAsPublic.append(try user.asPublic())
+                    }
+                    return usersAsPublic
+                }
     }
 
     func getHandler(_ req: Request) throws -> EventLoopFuture<User.Public> {
@@ -73,9 +76,10 @@ struct UsersController: RouteCollection {
             throw Abort(.badRequest)
         }
         return User.find(userID, on: req.db)
-                .unwrap(or: Abort(.notFound)).flatMapThrowing { user in
-                    try user.asPublic()
-                }
+                   .unwrap(or: Abort(.notFound))
+                   .flatMapThrowing { user in
+                        try user.asPublic()
+                   }
     }
 
     func getAcronymsHandler(_ req: Request) throws -> EventLoopFuture<[Acronym.Public]> {
@@ -88,19 +92,20 @@ struct UsersController: RouteCollection {
                     user.$acronyms.get(on: req.db).flatMapThrowing { acronyms in
                         var acronymsAsPublic: [Acronym.Public] = []
                         for acronym in acronyms {
-                            acronymsAsPublic.append(try acronym.asPublic())
+                            if !acronym.isPrivate {
+                                acronymsAsPublic.append(try acronym.asPublic())
+                            }
                         }
                         return acronymsAsPublic
                     }
                 }
     }
-
+    // check the with()
     func login(_ req: Request) throws -> EventLoopFuture<NewSession> {
         let userToLogin = try req.content.decode(UserLogin.self)
         var token: String!
         return User.query(on: req.db)
                 .filter(\.$username == userToLogin.username)
-                .with(\.$acronyms)
                 .first()
                 .unwrap(or: Abort(.notFound))
                 .flatMapThrowing { dbUser -> User in
@@ -116,6 +121,7 @@ struct UsersController: RouteCollection {
                     NewSession(token: token, user: try user.asPublic())
                 }
     }
+
     func me(_ req: Request) throws -> EventLoopFuture<Me> {
         let user = try req.auth.require(User.self)
         let username = user.username

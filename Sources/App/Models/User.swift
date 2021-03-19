@@ -28,6 +28,9 @@ final class User: Model, Content {
     @Children(for: \.$user)
     var acronyms: [Acronym]
 
+    @Children(for: \.$user)
+    var categories: [Category]
+
     @Timestamp(key: "created_at", on: .create)
     var createdAt: Date?
 

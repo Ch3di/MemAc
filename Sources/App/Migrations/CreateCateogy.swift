@@ -4,6 +4,7 @@ struct CreateCategory: Migration {
         database.schema("categories")
                 .id()
                 .field("name", .string, .required)
+                .field("userID", .uuid, .required, .references("users", "id"))
                 .create()
     }
 
