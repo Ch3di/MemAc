@@ -36,7 +36,7 @@ struct UsersController: RouteCollection {
         try User.Create.validate(content: req)
         let create = try req.content.decode(User.Create.self)
         guard create.password == create.confirmPassword else {
-            throw Abort(.badRequest, reason: "Passwords did not match")
+            throw Abort(UserError.passwordsNotMatch.status, reason: UserError.passwordsNotMatch.reason)
         }
         let user = try User(
                 name: create.name,
@@ -73,7 +73,7 @@ struct UsersController: RouteCollection {
 
     func getHandler(_ req: Request) throws -> EventLoopFuture<User.Public> {
         guard let userID: UUID = req.parameters.get("userID", as: UUID.self) else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
         }
         return User.find(userID, on: req.db)
                    .unwrap(or: Abort(.notFound))
@@ -84,7 +84,7 @@ struct UsersController: RouteCollection {
 
     func getAcronymsHandler(_ req: Request) throws -> EventLoopFuture<[Acronym.Public]> {
         guard let userID: UUID = req.parameters.get("userID", as: UUID.self) else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
         }
         return User.find(userID, on: req.db)
                 .unwrap(or: Abort(.notFound))

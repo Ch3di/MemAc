@@ -69,7 +69,7 @@ struct AcronymsController: RouteCollection {
 
     func getHandler(_ req: Request) throws -> EventLoopFuture<Acronym.Public> {
         guard let acronymID: UUID = req.parameters.get("acronymID", as: UUID.self) else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
         }
         let user = try req.auth.require(User.self)
         return Acronym.query(on: req.db)
@@ -82,7 +82,8 @@ struct AcronymsController: RouteCollection {
 
     func updateHandler(_ req: Request) throws -> EventLoopFuture<Acronym.Public> {
         guard let acronymID: UUID = req.parameters.get("acronymID", as: UUID.self) else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
+
         }
         let patchData = try req.content.decode(PatchAcronymData.self)
         let user = try req.auth.require(User.self)
@@ -103,7 +104,7 @@ struct AcronymsController: RouteCollection {
 
     func deleteHandler(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
         guard let acronymID: UUID = req.parameters.get("acronymID", as: UUID.self) else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
         }
         let user = try req.auth.require(User.self)
         return Acronym.query(on: req.db)
@@ -119,7 +120,7 @@ struct AcronymsController: RouteCollection {
 
     func searchHandler(_ req: Request) throws -> EventLoopFuture<[Acronym.Public]> {
         guard let searchTerm = req.query[String.self, at: "term"] else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
         }
         let user = try req.auth.require(User.self)
         return Acronym.query(on: req.db)
@@ -166,7 +167,7 @@ struct AcronymsController: RouteCollection {
 
     func getUserHandler(_ req: Request) throws -> EventLoopFuture<User.Public> {
         guard let acronymID: UUID = req.parameters.get("acronymID", as: UUID.self) else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
         }
         return Acronym.query(on: req.db)
                 .filter(\.$id == acronymID)
@@ -182,10 +183,10 @@ struct AcronymsController: RouteCollection {
 
     func addCategoriesHandler(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
         guard let acronymID: UUID = req.parameters.get("acronymID", as: UUID.self) else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
         }
         guard let categoryID: UUID = req.parameters.get("categoryID", as: UUID.self) else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
         }
         let user = try req.auth.require(User.self)
         let acronymQuery = Acronym.query(on: req.db)
@@ -207,7 +208,7 @@ struct AcronymsController: RouteCollection {
 
     func getCategoriesHandler(_ req: Request) throws -> EventLoopFuture<[Category.Public]> {
         guard let acronymID: UUID = req.parameters.get("acronymID", as: UUID.self) else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
         }
         let user = try req.auth.require(User.self)
         return Acronym.query(on: req.db)
@@ -230,10 +231,10 @@ struct AcronymsController: RouteCollection {
 
     func removeCategoriesHandler(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
         guard let acronymID: UUID = req.parameters.get("acronymID", as: UUID.self) else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
         }
         guard let categoryID: UUID = req.parameters.get("categoryID", as: UUID.self) else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
         }
         let user = try req.auth.require(User.self)
         let acronymQuery = Acronym.query(on: req.db)

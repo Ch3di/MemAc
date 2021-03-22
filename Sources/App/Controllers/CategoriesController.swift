@@ -41,7 +41,7 @@ struct CategoriesController: RouteCollection {
 
     func getHandler(_ req: Request) throws -> EventLoopFuture<Category.Public> {
         guard let categoryID: UUID = req.parameters.get("categoryID", as: UUID.self) else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
         }
         let user = try req.auth.require(User.self)
         return Category.query(on: req.db)
@@ -55,7 +55,7 @@ struct CategoriesController: RouteCollection {
 
     func getAcronymsHandler(_ req: Request) throws -> EventLoopFuture<[Acronym.Public]> {
         guard let categoryID: UUID = req.parameters.get("categoryID", as: UUID.self) else {
-            throw Abort(.badRequest)
+            throw Abort(IdError.badId.status, reason: IdError.badId.reason)
         }
         let user = try req.auth.require(User.self)
         return Category.query(on: req.db)

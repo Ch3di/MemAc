@@ -6,4 +6,5 @@ DerivedData/
 .DS_Store
 db.sqlite
 .swiftpm
-
+jwtRS256.key
+jwtRS256.key.pub
