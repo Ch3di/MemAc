@@ -18,7 +18,7 @@ Vapor is an open source web framework written in Swift. It can be used to create
 - Download and install Swift and Vapor 4 framework
 - Clone this repository
 - Generate random RSA private and public keys
-- Create a file in the app folder, call it 'jwtRS256.key' and store there your private key
+- Create a file in the app folder, call it 'jwtRS256.key' and store there your private key (Disclaimer: not the optimal solution)
 - Create a file in the app folder, call it 'jwtRS256.key.pub' and store there your public key
 - Open terminal in the app directory and fire up the following command: swift run
 
