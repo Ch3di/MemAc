@@ -8,7 +8,7 @@ Creates an acronym
 
 ## Requires authentication
 
-**No Authentication is required**
+**Bearer Authentication is required**
 
 ## Parameters
 
@@ -26,6 +26,22 @@ Creates an acronym
 {
   "error": true,
   "reason": "Value required for key 'isPrivate'."
+}
+```
+
+- **Unauthorized (code:401)** : this occurs when the provided JWT is not valid .
+
+```json
+{
+  "error": true,
+  "reason": "Unauthorized"
+}
+```
+
+```json
+{
+  "reason": "exp claim verification failed: expired",
+  "error": true
 }
 ```
 
