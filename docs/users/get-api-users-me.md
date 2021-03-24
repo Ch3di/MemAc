@@ -31,6 +31,13 @@ Returns the id and the username of a logged in user
 }
 ```
 
+```json
+{
+  "reason": "exp claim verification failed: expired",
+  "error": true
+}
+```
+
 ## Example
 
 **Request**

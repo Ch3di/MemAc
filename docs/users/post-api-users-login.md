@@ -38,6 +38,13 @@ Registers a new user
 }
 ```
 
+```json
+{
+  "reason": "exp claim verification failed: expired",
+  "error": true
+}
+```
+
 ## Example
 
 **Request**

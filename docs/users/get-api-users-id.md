@@ -4,7 +4,7 @@
 
 ## Description
 
-Reads the list of all the registered users
+Gets the name and username using their ID
 
 ## Requires authentication
 
